@@ -1,6 +1,9 @@
+
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -15,7 +18,10 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { UserPlus } from "lucide-react";
+import { UserPlus, Loader2 } from "lucide-react";
+import { auth } from "@/lib/firebase";
+import { createUserWithEmailAndPassword, FirebaseError } from "firebase/auth";
+import { useToast } from "@/hooks/use-toast";
 
 const registerFormSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
@@ -30,6 +36,10 @@ const registerFormSchema = z.object({
 type RegisterFormValues = z.infer<typeof registerFormSchema>;
 
 export function RegisterForm() {
+  const router = useRouter();
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
+
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerFormSchema),
     defaultValues: {
@@ -40,10 +50,39 @@ export function RegisterForm() {
     },
   });
 
-  // TODO: Implement actual registration logic with Firebase
-  function onSubmit(values: RegisterFormValues) {
-    console.log("Register submitted", values);
-    // router.push('/dashboard'); // Redirect after successful registration
+  async function onSubmit(values: RegisterFormValues) {
+    setIsLoading(true);
+    try {
+      // const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
+      // const user = userCredential.user;
+      // TODO: Could save user's name to Firestore or update profile here if needed
+      // await updateProfile(user, { displayName: values.name });
+      await createUserWithEmailAndPassword(auth, values.email, values.password);
+      
+      toast({
+        title: "Registration Successful",
+        description: "Your account has been created.",
+      });
+      router.push('/dashboard'); // Redirect after successful registration
+    } catch (error) {
+      const firebaseError = error as FirebaseError;
+      console.error("Registration error:", firebaseError);
+      let errorMessage = "An unexpected error occurred during registration.";
+      if (firebaseError.code === "auth/email-already-in-use") {
+        errorMessage = "This email is already registered. Please login or use a different email.";
+      } else if (firebaseError.code === "auth/invalid-email") {
+        errorMessage = "The email address is not valid.";
+      } else if (firebaseError.code === "auth/weak-password") {
+        errorMessage = "The password is too weak. Please choose a stronger password.";
+      }
+      toast({
+        title: "Registration Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   return (
@@ -62,7 +101,7 @@ export function RegisterForm() {
                 <FormItem>
                   <FormLabel>Full Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="John Doe" {...field} />
+                    <Input placeholder="John Doe" {...field} disabled={isLoading} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -75,7 +114,7 @@ export function RegisterForm() {
                 <FormItem>
                   <FormLabel>Email</FormLabel>
                   <FormControl>
-                    <Input type="email" placeholder="you@example.com" {...field} />
+                    <Input type="email" placeholder="you@example.com" {...field} disabled={isLoading} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -88,7 +127,7 @@ export function RegisterForm() {
                 <FormItem>
                   <FormLabel>Password</FormLabel>
                   <FormControl>
-                    <Input type="password" placeholder="••••••••" {...field} />
+                    <Input type="password" placeholder="••••••••" {...field} disabled={isLoading} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -101,14 +140,19 @@ export function RegisterForm() {
                 <FormItem>
                   <FormLabel>Confirm Password</FormLabel>
                   <FormControl>
-                    <Input type="password" placeholder="••••••••" {...field} />
+                    <Input type="password" placeholder="••••••••" {...field} disabled={isLoading} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
-              <UserPlus className="mr-2 h-4 w-4" /> Register
+            <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" disabled={isLoading}>
+              {isLoading ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <UserPlus className="mr-2 h-4 w-4" />
+              )}
+              Register
             </Button>
           </form>
         </Form>
