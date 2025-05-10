@@ -47,11 +47,11 @@ export default function ProfilePage() {
   return (
     <div className="container mx-auto py-8 px-4 md:px-6">
       {/*
+      This would be Next.js metadata API for App router if this were a server component.
       <Head>
         <title>{mockUser.name}&apos;s Profile - SkillSwap</title>
         <meta name="description" content={`View the profile of ${mockUser.name} on SkillSwap.`} />
       </Head>
-      This would be Next.js metadata API for App router.
       */}
       <ProfileDisplay user={mockUser} onEdit={handleEdit} />
       {/* 
@@ -67,8 +67,9 @@ export default function ProfilePage() {
   );
 }
 
-// Metadata for App Router (if this were a server component or for static generation)
-export const metadata = {
-  title: 'My Profile - SkillSwap',
-  description: 'View and manage your SkillSwap profile.',
-};
+// Metadata for App Router needs to be defined in a server component parent or layout.
+// For example, in src/app/(app)/profile/layout.tsx or src/app/(app)/layout.tsx
+// export const metadata = {
+//   title: 'My Profile - SkillSwap',
+//   description: 'View and manage your SkillSwap profile.',
+// };
