@@ -1,4 +1,3 @@
-
 "use client";
 
 import type { UserProfile } from "@/types/skillswap";
@@ -8,29 +7,29 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogFooter, // Import if needed for custom footer buttons, but form has its own
+  // DialogFooter is not used as the form handles buttons
 } from "@/components/ui/dialog";
-import { EditProfileForm } from "./edit-profile-form";
+import { EditProfileForm, type ProfileUpdateData } from "./edit-profile-form"; // Import ProfileUpdateData
 import { useState } from "react";
 
 interface EditProfileDialogProps {
   user: UserProfile;
   isOpen: boolean;
   onClose: () => void;
-  onSave: (data: Partial<UserProfile>) => Promise<void>;
+  onSave: (data: ProfileUpdateData) => Promise<void>; // Updated type to ProfileUpdateData
 }
 
 export function EditProfileDialog({ user, isOpen, onClose, onSave }: EditProfileDialogProps) {
   const [isSaving, setIsSaving] = useState(false);
 
-  const handleFormSave = async (data: Partial<UserProfile>) => {
+  const handleFormSave = async (data: ProfileUpdateData) => { // Use ProfileUpdateData
     setIsSaving(true);
     try {
       await onSave(data);
-      // onClose(); // Usually onSave in parent will handle closing
+      // Parent component (ProfilePage) is responsible for closing the dialog on successful save
     } catch (error) {
       console.error("Error saving profile:", error);
-      // Potentially show an error message within the dialog or via toast
+      // Consider adding a toast message here for save errors
     } finally {
       setIsSaving(false);
     }
@@ -46,19 +45,19 @@ export function EditProfileDialog({ user, isOpen, onClose, onSave }: EditProfile
         <DialogHeader>
           <DialogTitle>Edit Your Profile</DialogTitle>
           <DialogDescription>
-            Make changes to your profile information. Click save when you&apos;re done.
+            Make changes to your profile information, including photos. Click save when you&apos;re done.
           </DialogDescription>
         </DialogHeader>
-        
-        <div className="py-4">
-          <EditProfileForm 
-            user={user} 
-            onSave={handleFormSave} 
+
+        <div className="py-4 max-h-[70vh] overflow-y-auto pr-2"> {/* Added scroll for long forms */}
+          <EditProfileForm
+            user={user}
+            onSave={handleFormSave}
             onCancel={onClose}
             isSaving={isSaving}
           />
         </div>
-        {/* Footer can be part of the form itself for better control over submit/cancel buttons */}
+        {/* Footer is now part of the EditProfileForm */}
       </DialogContent>
     </Dialog>
   );

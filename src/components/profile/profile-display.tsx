@@ -20,6 +20,7 @@ const defaultUser: UserProfileType = {
   name: "User Not Found",
   email: "N/A",
   avatarUrl: "https://picsum.photos/seed/default/200/200",
+  coverPhotoUrl: "https://picsum.photos/seed/default-cover/1200/400",
   bio: "This user profile could not be loaded.",
   skillsOffered: [],
   skillsWanted: [],
@@ -39,34 +40,45 @@ function SkillPill({ skill }: { skill: Skill }) {
 
 export function ProfileDisplay({ user = defaultUser, onEdit, isCurrentUserProfile = true }: ProfileDisplayProps) {
   const profileUser = user || defaultUser; // Ensure user is never null/undefined
-  const userInitials = profileUser.name && profileUser.name !== "Loading..." && profileUser.name !== "User Not Found" 
-    ? profileUser.name.split(' ').map(n => n[0]).join('').substring(0,2).toUpperCase() 
+  const userInitials = profileUser.name && profileUser.name !== "Loading..." && profileUser.name !== "User Not Found"
+    ? profileUser.name.split(' ').map(n => n[0]).join('').substring(0,2).toUpperCase()
     : "??";
+
+  const coverPhotoSrc = profileUser.coverPhotoUrl || `https://picsum.photos/seed/${profileUser.id}-cover/1200/400`;
+  const avatarSrc = profileUser.avatarUrl || `https://picsum.photos/seed/${profileUser.id}/200/200`;
+
 
   return (
     <div className="space-y-8">
       <Card className="overflow-hidden shadow-xl">
         <div className="relative h-48 md:h-64 w-full">
-          <Image 
-            src={profileUser.id === "loading..." ? "https://picsum.photos/1200/400?grayscale" : `https://picsum.photos/seed/${profileUser.id}-bg/1200/400`}
-            alt="Profile background" 
-            layout="fill" 
+          <Image
+            key={coverPhotoSrc} // Add key to force re-render on src change
+            src={coverPhotoSrc}
+            alt="Profile background"
+            layout="fill"
             objectFit="cover"
             data-ai-hint="abstract background"
             priority={true} // Prioritize banner image
+            className="bg-secondary" // Add a background color for loading/error states
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
           <div className="absolute bottom-6 left-6">
             <Avatar className="h-24 w-24 md:h-32 md:w-32 border-4 border-background shadow-lg">
-              <AvatarImage src={profileUser.avatarUrl} alt={profileUser.name} data-ai-hint="profile picture" />
+               <AvatarImage
+                  key={avatarSrc} // Add key to force re-render on src change
+                  src={avatarSrc}
+                  alt={profileUser.name}
+                  data-ai-hint="profile picture"
+                />
               <AvatarFallback className="text-4xl">{userInitials}</AvatarFallback>
             </Avatar>
           </div>
            {isCurrentUserProfile && onEdit && (
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={onEdit} 
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onEdit}
               className="absolute top-4 right-4 bg-background/80 hover:bg-background"
               disabled={profileUser.id === "loading..."}
             >
@@ -74,7 +86,7 @@ export function ProfileDisplay({ user = defaultUser, onEdit, isCurrentUserProfil
             </Button>
            )}
         </div>
-        
+
         <CardContent className="pt-20 md:pt-16 p-6">
           <h1 className="text-3xl font-bold text-foreground">{profileUser.name}</h1>
           <p className="text-primary flex items-center gap-2 mt-1">

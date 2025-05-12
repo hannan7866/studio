@@ -3,6 +3,7 @@ export interface UserProfile {
   name: string;
   email: string;
   avatarUrl?: string;
+  coverPhotoUrl?: string; // Added cover photo URL
   bio?: string;
   skillsOffered: Skill[];
   skillsWanted: Skill[];
