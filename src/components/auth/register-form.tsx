@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from "next/link";
@@ -20,7 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { UserPlus, Loader2 } from "lucide-react";
 import { auth } from "@/lib/firebase";
-import { createUserWithEmailAndPassword, FirebaseError } from "firebase/auth";
+import { createUserWithEmailAndPassword, updateProfile, FirebaseError } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 
 const registerFormSchema = z.object({
@@ -53,11 +52,13 @@ export function RegisterForm() {
   async function onSubmit(values: RegisterFormValues) {
     setIsLoading(true);
     try {
-      // const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
-      // const user = userCredential.user;
-      // TODO: Could save user's name to Firestore or update profile here if needed
-      // await updateProfile(user, { displayName: values.name });
-      await createUserWithEmailAndPassword(auth, values.email, values.password);
+      const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
+      // Set the user's display name
+      if (userCredential.user) {
+        await updateProfile(userCredential.user, {
+          displayName: values.name,
+        });
+      }
       
       toast({
         title: "Registration Successful",
@@ -74,6 +75,8 @@ export function RegisterForm() {
         errorMessage = "The email address is not valid.";
       } else if (firebaseError.code === "auth/weak-password") {
         errorMessage = "The password is too weak. Please choose a stronger password.";
+      } else if (firebaseError.code === "auth/configuration-not-found") {
+        errorMessage = "Firebase authentication configuration not found. Please check your Firebase project setup.";
       }
       toast({
         title: "Registration Failed",
@@ -101,7 +104,7 @@ export function RegisterForm() {
                 <FormItem>
                   <FormLabel>Full Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="John Doe" {...field} disabled={isLoading} />
+                    <Input placeholder="John Doe" {...field} disabled={isLoading} suppressHydrationWarning />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -114,7 +117,7 @@ export function RegisterForm() {
                 <FormItem>
                   <FormLabel>Email</FormLabel>
                   <FormControl>
-                    <Input type="email" placeholder="you@example.com" {...field} disabled={isLoading} />
+                    <Input type="email" placeholder="you@example.com" {...field} disabled={isLoading} suppressHydrationWarning />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -127,7 +130,7 @@ export function RegisterForm() {
                 <FormItem>
                   <FormLabel>Password</FormLabel>
                   <FormControl>
-                    <Input type="password" placeholder="••••••••" {...field} disabled={isLoading} />
+                    <Input type="password" placeholder="••••••••" {...field} disabled={isLoading} suppressHydrationWarning />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -140,13 +143,13 @@ export function RegisterForm() {
                 <FormItem>
                   <FormLabel>Confirm Password</FormLabel>
                   <FormControl>
-                    <Input type="password" placeholder="••••••••" {...field} disabled={isLoading} />
+                    <Input type="password" placeholder="••••••••" {...field} disabled={isLoading} suppressHydrationWarning />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" disabled={isLoading}>
+            <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" disabled={isLoading} suppressHydrationWarning>
               {isLoading ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (

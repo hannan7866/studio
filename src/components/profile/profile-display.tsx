@@ -10,27 +10,21 @@ import Image from "next/image";
 
 interface ProfileDisplayProps {
   user: UserProfileType;
-  onEdit: () => void; // Callback to handle edit action
+  onEdit?: () => void; // Callback to handle edit action, make optional if used in public views
+  isCurrentUserProfile?: boolean; // To conditionally show edit button
 }
 
-// Mock data for skills as it's not part of UserProfileType directly but often shown
-const mockUser: UserProfileType = {
-  id: "1",
-  name: "Alex Johnson",
-  email: "alex.johnson@example.com",
-  avatarUrl: "https://picsum.photos/seed/alex/200/200",
-  bio: "Passionate lifelong learner and full-stack developer. Eager to share knowledge in web technologies and learn creative arts like pottery and music production.",
-  skillsOffered: [
-    { id: "s1", name: "React Development", category: "Tech" },
-    { id: "s2", name: "Node.js Backend", category: "Tech" },
-    { id: "s3", name: "Guitar Lessons (Beginner)", category: "Music" },
-  ],
-  skillsWanted: [
-    { id: "s4", name: "Pottery", category: "Arts" },
-    { id: "s5", name: "Digital Marketing", category: "Business" },
-  ],
-  timeAvailable: "10 hours/week",
-  timeBalance: 25.5,
+// Default user structure if none is provided (e.g., public profile view of a non-existent user)
+const defaultUser: UserProfileType = {
+  id: "unknown",
+  name: "User Not Found",
+  email: "N/A",
+  avatarUrl: "https://picsum.photos/seed/default/200/200",
+  bio: "This user profile could not be loaded.",
+  skillsOffered: [],
+  skillsWanted: [],
+  timeAvailable: "N/A",
+  timeBalance: 0,
 };
 
 
@@ -43,42 +37,51 @@ function SkillPill({ skill }: { skill: Skill }) {
   );
 }
 
-export function ProfileDisplay({ user = mockUser, onEdit }: ProfileDisplayProps) {
+export function ProfileDisplay({ user = defaultUser, onEdit, isCurrentUserProfile = true }: ProfileDisplayProps) {
+  const profileUser = user || defaultUser; // Ensure user is never null/undefined
+  const userInitials = profileUser.name && profileUser.name !== "Loading..." && profileUser.name !== "User Not Found" 
+    ? profileUser.name.split(' ').map(n => n[0]).join('').substring(0,2).toUpperCase() 
+    : "??";
+
   return (
     <div className="space-y-8">
       <Card className="overflow-hidden shadow-xl">
         <div className="relative h-48 md:h-64 w-full">
           <Image 
-            src="https://picsum.photos/seed/profilebg/1200/400" 
+            src={profileUser.id === "loading..." ? "https://picsum.photos/1200/400?grayscale" : `https://picsum.photos/seed/${profileUser.id}-bg/1200/400`}
             alt="Profile background" 
             layout="fill" 
             objectFit="cover"
             data-ai-hint="abstract background"
+            priority={true} // Prioritize banner image
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
           <div className="absolute bottom-6 left-6">
             <Avatar className="h-24 w-24 md:h-32 md:w-32 border-4 border-background shadow-lg">
-              <AvatarImage src={user.avatarUrl} alt={user.name} data-ai-hint="profile picture" />
-              <AvatarFallback className="text-4xl">{user.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+              <AvatarImage src={profileUser.avatarUrl} alt={profileUser.name} data-ai-hint="profile picture" />
+              <AvatarFallback className="text-4xl">{userInitials}</AvatarFallback>
             </Avatar>
           </div>
-           <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={onEdit} 
-            className="absolute top-4 right-4 bg-background/80 hover:bg-background"
-          >
-            <Edit3 className="mr-2 h-4 w-4" /> Edit Profile
-          </Button>
+           {isCurrentUserProfile && onEdit && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={onEdit} 
+              className="absolute top-4 right-4 bg-background/80 hover:bg-background"
+              disabled={profileUser.id === "loading..."}
+            >
+              <Edit3 className="mr-2 h-4 w-4" /> Edit Profile
+            </Button>
+           )}
         </div>
         
         <CardContent className="pt-20 md:pt-16 p-6">
-          <h1 className="text-3xl font-bold text-foreground">{user.name}</h1>
+          <h1 className="text-3xl font-bold text-foreground">{profileUser.name}</h1>
           <p className="text-primary flex items-center gap-2 mt-1">
-            <Mail className="h-4 w-4" /> {user.email}
+            <Mail className="h-4 w-4" /> {profileUser.email}
           </p>
-          {user.bio && (
-            <p className="mt-4 text-muted-foreground leading-relaxed">{user.bio}</p>
+          {profileUser.bio && (
+            <p className="mt-4 text-muted-foreground leading-relaxed">{profileUser.bio}</p>
           )}
         </CardContent>
       </Card>
@@ -87,11 +90,11 @@ export function ProfileDisplay({ user = mockUser, onEdit }: ProfileDisplayProps)
         <Card className="shadow-lg">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-xl"><Star className="text-accent h-6 w-6" /> Skills Offered</CardTitle>
-            <CardDescription>Expertise Alex is willing to share with the community.</CardDescription>
+            <CardDescription>Expertise {profileUser.name === "Loading..." ? "this user" : profileUser.name.split(' ')[0]} is willing to share.</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-wrap gap-2">
-            {user.skillsOffered.length > 0 ? (
-              user.skillsOffered.map(skill => <SkillPill key={skill.id} skill={skill} />)
+            {profileUser.skillsOffered && profileUser.skillsOffered.length > 0 ? (
+              profileUser.skillsOffered.map(skill => <SkillPill key={skill.id} skill={skill} />)
             ) : (
               <p className="text-muted-foreground">No skills offered yet.</p>
             )}
@@ -101,11 +104,11 @@ export function ProfileDisplay({ user = mockUser, onEdit }: ProfileDisplayProps)
         <Card className="shadow-lg">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-xl"><Search className="text-primary h-6 w-6" /> Skills Wanted</CardTitle>
-            <CardDescription>Areas where Alex is looking to learn and grow.</CardDescription>
+            <CardDescription>Areas where {profileUser.name === "Loading..." ? "this user" : profileUser.name.split(' ')[0]} is looking to learn.</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-wrap gap-2">
-            {user.skillsWanted.length > 0 ? (
-              user.skillsWanted.map(skill => <SkillPill key={skill.id} skill={skill} />)
+            {profileUser.skillsWanted && profileUser.skillsWanted.length > 0 ? (
+              profileUser.skillsWanted.map(skill => <SkillPill key={skill.id} skill={skill} />)
             ) : (
               <p className="text-muted-foreground">No skills wanted at the moment.</p>
             )}
@@ -116,20 +119,20 @@ export function ProfileDisplay({ user = mockUser, onEdit }: ProfileDisplayProps)
       <Card className="shadow-lg">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-xl"><Clock className="text-primary h-6 w-6" /> Time Bank & Availability</CardTitle>
-          <CardDescription>Alex&apos;s current time balance and weekly availability.</CardDescription>
+          <CardDescription>{profileUser.name === "Loading..." ? "This user's" : `${profileUser.name.split(' ')[0]}'s`} current time balance and weekly availability.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
             <div className="flex items-center justify-between p-4 bg-secondary/50 rounded-lg">
                 <div>
                     <p className="text-sm font-medium text-muted-foreground">Current Time Balance</p>
-                    <p className="text-2xl font-bold text-primary">{user.timeBalance.toFixed(1)} hours</p>
+                    <p className="text-2xl font-bold text-primary">{profileUser.timeBalance?.toFixed(1)} hours</p>
                 </div>
                 <Clock className="h-8 w-8 text-primary" />
             </div>
             <div className="flex items-center justify-between p-4 bg-secondary/50 rounded-lg">
                 <div>
                     <p className="text-sm font-medium text-muted-foreground">Weekly Availability</p>
-                    <p className="text-2xl font-bold">{user.timeAvailable || "Not specified"}</p>
+                    <p className="text-2xl font-bold">{profileUser.timeAvailable || "Not specified"}</p>
                 </div>
                 <CalendarDays className="h-8 w-8 text-muted-foreground" />
             </div>
